@@ -3,7 +3,9 @@ package org.example;
 import org.apache.catalina.Context;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.startup.Tomcat;
-import org.example.config.WebAppInitializer;
+import org.example.config.WebConfig;
+import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
+import org.springframework.web.servlet.DispatcherServlet;
 
 import java.io.File;
 
@@ -13,14 +15,23 @@ public class Main {
         
         Tomcat tomcat = new Tomcat();
         tomcat.setPort(8080);
-        tomcat.getHost().setAppBase(".");
+        tomcat.getConnector(); // Initialize default connector
         
         try {
             // Create a context for our web application
-            Context context = tomcat.addWebapp("", new File(".").getAbsolutePath());
+            // Use addContext instead of addWebapp for embedded execution without WAR layout
+            Context context = tomcat.addContext("", new File(".").getAbsolutePath());
             
-            // Add our web application initializer
-            context.addApplicationListener(WebAppInitializer.class.getName());
+            // Initialize Spring Context programmatically
+            AnnotationConfigWebApplicationContext springContext = new AnnotationConfigWebApplicationContext();
+            springContext.register(WebConfig.class);
+            
+            // Create and register DispatcherServlet
+            DispatcherServlet dispatcherServlet = new DispatcherServlet(springContext);
+            Tomcat.addServlet(context, "dispatcherServlet", dispatcherServlet);
+            
+            // Map the servlet to /api/*
+            context.addServletMappingDecoded("/api/*", "dispatcherServlet");
             
             tomcat.start();
             
