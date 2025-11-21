@@ -203,8 +203,8 @@ The application leverages several design patterns for maintainability and extens
 - Reduces server load
 - Provides instant updates to clients
 
-## API documentation
+## Future Enhancements
 
-API documentation will be available at `/swagger-ui.html` once Swagger is configured.
+API documentation (Swagger/OpenAPI) will be available at `/swagger-ui.html` once configured.
 
 
