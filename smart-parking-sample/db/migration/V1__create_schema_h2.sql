@@ -1,0 +1,60 @@
+-- H2-compatible schema for Smart Parking sample
+-- Uses simpler types and CURRENT_TIMESTAMP
+
+CREATE TABLE parking_spot (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  floor INT NOT NULL,
+  zone VARCHAR(64),
+  spot_number VARCHAR(64),
+  size VARCHAR(32) NOT NULL,
+  status VARCHAR(32) NOT NULL DEFAULT 'AVAILABLE',
+  sensor_id VARCHAR(128),
+  metadata VARCHAR(1000),
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  version INT NOT NULL DEFAULT 1
+);
+
+CREATE INDEX idx_parking_spot_status_size_floor ON parking_spot (status, size, floor);
+
+CREATE TABLE vehicle (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  plate_number VARCHAR(64) UNIQUE NOT NULL,
+  type VARCHAR(32) NOT NULL,
+  owner VARCHAR(128),
+  metadata VARCHAR(1000),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE parking_session (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  vehicle_id BIGINT REFERENCES vehicle(id),
+  spot_id BIGINT REFERENCES parking_spot(id),
+  entry_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  exit_time TIMESTAMP,
+  status VARCHAR(32) NOT NULL DEFAULT 'ACTIVE',
+  reserved_at TIMESTAMP,
+  fee_cents BIGINT,
+  payment_status VARCHAR(32),
+  metadata VARCHAR(1000)
+);
+
+CREATE INDEX idx_parking_session_vehicle_status ON parking_session (vehicle_id, status);
+
+CREATE TABLE pricing_policy (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  vehicle_type VARCHAR(32) NOT NULL,
+  grace_period_minutes INT DEFAULT 0,
+  unit VARCHAR(16) NOT NULL,
+  rate_per_unit_cents BIGINT NOT NULL,
+  rounding VARCHAR(16) DEFAULT 'UP',
+  daily_cap_cents BIGINT,
+  effective_from TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  effective_to TIMESTAMP
+);
+
+-- sample seed data
+INSERT INTO pricing_policy (vehicle_type, grace_period_minutes, unit, rate_per_unit_cents, daily_cap_cents)
+VALUES
+('MOTORCYCLE', 15, 'HOUR', 100, NULL),
+('CAR', 15, 'HOUR', 300, NULL),
+('BUS', 0, 'HOUR', 500, NULL);
